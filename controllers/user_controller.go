@@ -87,7 +87,11 @@ func UpdateUser(c *gin.Context) {
 
 	var count int
 
-	err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email = ? AND != ?", user.Email, id).Scan(&count)
+	err := config.DB.QueryRow(
+		"SELECT COUNT(*) FROM users WHERE email = ? AND id != ?",
+		user.Email,
+		id,
+	).Scan(&count)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error:": err.Error()})
 		return
