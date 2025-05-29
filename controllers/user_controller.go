@@ -35,6 +35,38 @@ func GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
+func GetUsersByID(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Id cannot be empty"})
+		return
+	}
+
+	// First check if user exists
+	var count int
+	err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE id = ?", id).Scan(&count)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if count == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User does not exist"})
+		return
+	}
+
+	// Get user data
+	userData := models.User{}
+	err = config.DB.QueryRow("SELECT id, name, email FROM users WHERE id = ?", id).
+		Scan(&userData.ID, &userData.Name, &userData.Email)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return // Added missing return
+	}
+
+	c.JSON(http.StatusOK, userData)
+}
+
 func CreateUser(c *gin.Context) {
 	var user models.User
 

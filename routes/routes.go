@@ -13,6 +13,7 @@ func SetupRouter() *gin.Engine {
 		users := api.Group("/users")
 		{
 			users.GET("/", controllers.GetUsers)
+			users.GET("/:id", controllers.GetUsersByID)
 			users.POST("/", controllers.CreateUser)
 			users.PATCH("/:id", controllers.UpdateUser)
 			users.DELETE("/:id", controllers.DeleteUser)
