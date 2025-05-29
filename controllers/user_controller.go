@@ -72,59 +72,81 @@ func CreateUser(c *gin.Context) {
 }
 
 func UpdateUser(c *gin.Context) {
+	// Get user ID from URL parameter
 	id := c.Param("id")
-
 	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User id is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user ID is required"})
 		return
 	}
 
+	// Bind JSON input to user struct
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var count int
+	// First get the current user data
+	var currentUser models.User
+	err := config.DB.QueryRow("SELECT email FROM users WHERE id = ?", id).
+		Scan(&currentUser.Email)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
 
-	err := config.DB.QueryRow(
-		"SELECT COUNT(*) FROM users WHERE email = ? AND id != ?",
+	// Only check for duplicate email if the email is being changed
+	if user.Email != currentUser.Email {
+		var count int
+		err := config.DB.QueryRow(
+			"SELECT COUNT(*) FROM users WHERE email = ? AND id != ?",
+			user.Email,
+			id,
+		).Scan(&count)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if count > 0 {
+			c.JSON(http.StatusConflict, gin.H{"error": "email already in use by another user"})
+			return
+		}
+	}
+
+	// Update the user
+	result, err := config.DB.Exec(
+		"UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?",
+		user.Name,
 		user.Email,
+		user.Password,
 		id,
-	).Scan(&count)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error:": err.Error()})
-		return
-	}
-	if count > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email already exists"})
-		return
-	}
-
-	result, err := config.DB.Exec("UPDATE users SET name = ? ,email = ?, password = ?, WHERE id = ?", user.Name, user.Email, user.Email, id)
+	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	rowsaffected, err := result.RowsAffected()
+	// Check if any rows were actually updated
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	if rowsaffected == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no changes made or user not found"})
 		return
 	}
 
+	// Return the updated user data
 	updatedUser := models.User{}
-	err = config.DB.QueryRow("SELECT id, name, email, password FROM users WHERE id = ?", id).
-		Scan(&updatedUser.ID, &updatedUser.Name, &updatedUser.Email, &updatedUser.Password)
+	err = config.DB.QueryRow(
+		"SELECT id, name, email, password FROM users WHERE id = ?",
+		id,
+	).Scan(&updatedUser.ID, &updatedUser.Name, &updatedUser.Email, &updatedUser.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, updatedUser)
-
 }
