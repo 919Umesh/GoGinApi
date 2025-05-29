@@ -1,27 +1,3 @@
-// package main
-
-// import (
-// 	"log"
-
-// 	"github.com/joho/godotenv"
-// 	"github.com/umesh/ginapi/config"
-// 	"github.com/umesh/ginapi/models"
-// )
-
-// func main() {
-// 	errenv := godotenv.Load()
-// 	if errenv != nil {
-// 		log.Fatal("Error loading .env file")
-// 	}
-// 	config.ConnectDB()
-
-// 	err := config.DB.AutoMigrate(&models.User{})
-// 	if err != nil {
-// 		log.Fatal("Migration failed: ", err)
-// 	}
-// 	log.Println("Migration completed successfully")
-// }
-
 package main
 
 import (
