@@ -150,3 +150,43 @@ func UpdateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, updatedUser)
 }
+
+func DeleteUser(c *gin.Context) {
+	// Get user ID from the URL parameter
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user ID is required"})
+		return
+	}
+
+	// Check if user exists
+	var exists int
+	err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE id = ?", id).Scan(&exists)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check user existence"})
+		return
+	}
+	if exists == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	// Delete the user
+	result, err := config.DB.Exec("DELETE FROM users WHERE id = ?", id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user"})
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not confirm deletion"})
+		return
+	}
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found or already deleted"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "user deleted successfully"})
+}
