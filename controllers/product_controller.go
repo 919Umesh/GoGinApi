@@ -1,15 +1,68 @@
 package controllers
 
 import (
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/umesh/ginapi/config"
 	"github.com/umesh/ginapi/models"
 )
 
+// func GetProducts(c *gin.Context) {
+// 	rows, err := config.DB.Query("SELECT id, name, price, quantity, image, sales_rate, purchase_rate FROM products")
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	defer rows.Close()
+
+// 	var products []models.Product
+// 	for rows.Next() {
+// 		var product models.Product
+// 		err := rows.Scan(
+// 			&product.ID,
+// 			&product.Name,
+// 			&product.Price,
+// 			&product.Quantity,
+// 			&product.Image,
+// 			&product.SalesRate,
+// 			&product.PurchaseRate,
+// 		)
+// 		if err != nil {
+// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 			return
+// 		}
+// 		products = append(products, product)
+// 	}
+
+// 	if err = rows.Err(); err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+//		c.JSON(http.StatusOK, products)
+//	}
 func GetProducts(c *gin.Context) {
-	rows, err := config.DB.Query("SELECT id, name, price, quantity, image, sales_rate, purchase_rate FROM products")
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
+	query := `
+        SELECT id, name, price, quantity, image, sales_rate, purchase_rate 
+        FROM products 
+        LIMIT ? OFFSET ?
+    `
+	rows, err := config.DB.Query(query, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -40,7 +93,22 @@ func GetProducts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, products)
+	var total int
+	err = config.DB.QueryRow("SELECT COUNT(*) FROM products").Scan(&total)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": products,
+		"pagination": gin.H{
+			"total":       total,
+			"page":        page,
+			"limit":       limit,
+			"total_pages": int(math.Ceil(float64(total) / float64(limit))),
+		},
+	})
 }
 
 func GetProductByID(c *gin.Context) {
