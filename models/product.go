@@ -1,4 +1,3 @@
-// models/product.go
 package models
 
 type Product struct {
