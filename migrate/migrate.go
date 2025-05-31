@@ -26,6 +26,7 @@ func main() {
 	}{
 		{"users", createUsersTable},
 		{"products", createProductsTable},
+		{"venues", createVenuesTable},
 	}
 
 	for _, table := range tables {
@@ -85,4 +86,19 @@ func createProductsTable(db *sql.DB) error {
 	// 	}
 	// }
 	return nil
+}
+
+func createVenuesTable(db *sql.DB) error {
+	createTableSQL := `
+	CREATE TABLE IF NOT EXISTS venues (
+		id INT AUTO_INCREMENT PRIMARY KEY,
+		name VARCHAR(255) NOT NULL,
+		location VARCHAR(255) NOT NULL,
+		size VARCHAR(100) NOT NULL,
+		image VARCHAR(255),
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+	)`
+	_, err := db.Exec(createTableSQL)
+	return err
 }

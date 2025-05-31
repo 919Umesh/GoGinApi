@@ -26,6 +26,11 @@ func SetupRouter() *gin.Engine {
 			products.PATCH("/:id", controllers.UpdateProduct)
 			products.DELETE("/:id", controllers.DeleteProduct)
 		}
+		venues := api.Group("/venues")
+		{
+			venues.GET("/", controllers.GetVenues)
+			venues.POST("/", controllers.CreateVenue)
+		}
 	}
 
 	return r
