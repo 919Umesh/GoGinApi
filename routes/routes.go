@@ -18,6 +18,14 @@ func SetupRouter() *gin.Engine {
 			users.PATCH("/:id", controllers.UpdateUser)
 			users.DELETE("/:id", controllers.DeleteUser)
 		}
+		products := api.Group("/products")
+		{
+			products.GET("/", controllers.GetProducts)
+			products.GET("/:id", controllers.GetProductByID)
+			products.POST("/", controllers.CreateProduct)
+			products.PATCH("/:id", controllers.UpdateProduct)
+			products.DELETE("/:id", controllers.DeleteProduct)
+		}
 	}
 
 	return r

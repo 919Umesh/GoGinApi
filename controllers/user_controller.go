@@ -8,6 +8,7 @@ import (
 	"github.com/umesh/ginapi/models"
 )
 
+// User Controller
 func GetUsers(c *gin.Context) {
 	rows, err := config.DB.Query("SELECT id, name, email, password FROM users")
 	if err != nil {
@@ -42,7 +43,6 @@ func GetUsersByID(c *gin.Context) {
 		return
 	}
 
-	// First check if user exists
 	var count int
 	err := config.DB.QueryRow("SELECT COUNT(*) FROM users WHERE id = ?", id).Scan(&count)
 	if err != nil {
@@ -56,12 +56,12 @@ func GetUsersByID(c *gin.Context) {
 
 	// Get user data
 	userData := models.User{}
-	err = config.DB.QueryRow("SELECT id, name, email FROM users WHERE id = ?", id).
-		Scan(&userData.ID, &userData.Name, &userData.Email)
+	err = config.DB.QueryRow("SELECT id, name, email, password FROM users WHERE id = ?", id).
+		Scan(&userData.ID, &userData.Name, &userData.Email, &userData.Password)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return // Added missing return
+		return
 	}
 
 	c.JSON(http.StatusOK, userData)
