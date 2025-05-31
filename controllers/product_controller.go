@@ -151,6 +151,57 @@ func GetProductByID(c *gin.Context) {
 	c.JSON(http.StatusOK, productData)
 }
 
+func SearchProducts(c *gin.Context) {
+	// Get search query parameter
+	searchQuery := c.Query("q")
+	if searchQuery == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "search query parameter 'q' is required"})
+		return
+	}
+
+	// Prepare the SQL query with search
+	query := `
+        SELECT id, name, price, quantity, image, sales_rate, purchase_rate 
+        FROM products 
+        WHERE name LIKE ? OR id LIKE ?
+    `
+	searchParam := "%" + searchQuery + "%"
+	rows, err := config.DB.Query(query, searchParam, searchParam)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	var products []models.Product
+	for rows.Next() {
+		var product models.Product
+		err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.Quantity,
+			&product.Image,
+			&product.SalesRate,
+			&product.PurchaseRate,
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		products = append(products, product)
+	}
+
+	if err = rows.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": products,
+	})
+}
+
 func CreateProduct(c *gin.Context) {
 	var product models.Product
 

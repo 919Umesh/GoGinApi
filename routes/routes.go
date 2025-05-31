@@ -29,6 +29,7 @@ func SetupRouter() *gin.Engine {
 		products := protected.Group("/products")
 		{
 			products.GET("/", controllers.GetProducts)
+			products.GET("/search", controllers.SearchProducts)
 			products.GET("/:id", controllers.GetProductByID)
 			products.POST("/", controllers.CreateProduct)
 			products.PATCH("/:id", controllers.UpdateProduct)
