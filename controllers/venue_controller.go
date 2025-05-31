@@ -11,7 +11,6 @@ import (
 	"github.com/umesh/ginapi/models"
 )
 
-// Helper function to get full image URL
 func getFullImageURL(filename string) string {
 	if filename == "" {
 		return ""
@@ -30,7 +29,6 @@ func CreateVenue(c *gin.Context) {
 		return
 	}
 
-	// Save image with unique name
 	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(file.Filename))
 	savePath := filepath.Join("uploads", filename)
 	if err := c.SaveUploadedFile(file, savePath); err != nil {
@@ -38,7 +36,6 @@ func CreateVenue(c *gin.Context) {
 		return
 	}
 
-	// Insert into database
 	result, err := config.DB.Exec(`
 		INSERT INTO venues (name, location, size, image)
 		VALUES (?, ?, ?, ?)`,
@@ -55,7 +52,7 @@ func CreateVenue(c *gin.Context) {
 		Name:     name,
 		Location: location,
 		Size:     size,
-		Image:    getFullImageURL(filename), // Store full URL in response
+		Image:    getFullImageURL(filename),
 	}
 
 	c.JSON(http.StatusCreated, venue)
