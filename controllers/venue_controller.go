@@ -11,6 +11,14 @@ import (
 	"github.com/umesh/ginapi/models"
 )
 
+// Helper function to get full image URL
+func getFullImageURL(filename string) string {
+	if filename == "" {
+		return ""
+	}
+	return fmt.Sprintf("http://localhost:8080/uploads/%s", filename)
+}
+
 func CreateVenue(c *gin.Context) {
 	name := c.PostForm("name")
 	location := c.PostForm("location")
@@ -47,7 +55,7 @@ func CreateVenue(c *gin.Context) {
 		Name:     name,
 		Location: location,
 		Size:     size,
-		Image:    filename,
+		Image:    getFullImageURL(filename), // Store full URL in response
 	}
 
 	c.JSON(http.StatusCreated, venue)
@@ -64,11 +72,13 @@ func GetVenues(c *gin.Context) {
 	var venues []models.Venue
 	for rows.Next() {
 		var venue models.Venue
-		err := rows.Scan(&venue.ID, &venue.Name, &venue.Location, &venue.Size, &venue.Image)
+		var imageFilename string
+		err := rows.Scan(&venue.ID, &venue.Name, &venue.Location, &venue.Size, &imageFilename)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		venue.Image = getFullImageURL(imageFilename)
 		venues = append(venues, venue)
 	}
 

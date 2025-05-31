@@ -8,6 +8,9 @@ import (
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
+	// Add this line to serve static files
+	r.Static("/uploads", "./uploads")
+
 	api := r.Group("/api")
 	{
 		users := api.Group("/users")
