@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -15,16 +16,15 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	// Validate JWT secret
 	if os.Getenv("JWT_SECRET") == "" {
 		log.Fatal("JWT_SECRET environment variable is required")
 	}
 
-	// Connect to database
+	fmt.Println("Start")
 	config.ConnectDB()
+	fmt.Println("Close")
 	defer config.DB.Close()
 
-	// Setup and run router
 	router := routes.SetupRouter()
 	log.Fatal(router.Run(":8080"))
 }
