@@ -72,7 +72,7 @@ func createProductsTable(db *sql.DB) error {
 		return err
 	}
 
-	// // Add new columns if they don't exist
+	// Add new columns if they don't exist
 	// alterSQLs := []string{
 	// 	`ALTER TABLE products ADD COLUMN IF NOT EXISTS new_column VARCHAR(255)`,
 	// 	`ALTER TABLE products MODIFY COLUMN price DECIMAL(12,2)`,
