@@ -20,9 +20,10 @@ func main() {
 		log.Fatal("JWT_SECRET environment variable is required")
 	}
 
-	fmt.Println("Start")
+	fmt.Println("-------------------Start--------------")
 	config.ConnectDB()
-	fmt.Println("Close")
+	fmt.Println("-------------------Close--------------")
+
 	defer config.DB.Close()
 
 	router := routes.SetupRouter()
