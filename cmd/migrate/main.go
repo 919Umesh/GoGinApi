@@ -9,17 +9,14 @@ import (
 )
 
 func main() {
-	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	// Connect to database
 	config.ConnectDB()
 	defer config.DB.Close()
 
-	// Create tables if they don't exist
 	tables := []struct {
 		name    string
 		creator func(*sql.DB) error
@@ -38,6 +35,7 @@ func main() {
 	}
 }
 
+// Create the User Table
 func createUsersTable(db *sql.DB) error {
 	createTableSQL := `
 	CREATE TABLE IF NOT EXISTS users (
@@ -53,6 +51,7 @@ func createUsersTable(db *sql.DB) error {
 	return err
 }
 
+// Create the product table
 func createProductsTable(db *sql.DB) error {
 	createTableSQL := `
 	CREATE TABLE IF NOT EXISTS products (
@@ -73,6 +72,7 @@ func createProductsTable(db *sql.DB) error {
 	return nil
 }
 
+// Create the venue table
 func createVenuesTable(db *sql.DB) error {
 	createTableSQL := `
 	CREATE TABLE IF NOT EXISTS venues (
