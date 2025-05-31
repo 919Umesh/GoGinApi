@@ -10,14 +10,12 @@ func SetupRouter() *gin.Engine {
 
 	r.Static("/uploads", "./uploads")
 
-	// Public routes
 	public := r.Group("/api")
 	{
 		public.POST("/login", controllers.Login)
 		public.POST("/users", controllers.CreateUser)
 	}
 
-	// Protected routes (require JWT)
 	protected := r.Group("/api")
 	protected.Use(controllers.AuthMiddleware())
 	{

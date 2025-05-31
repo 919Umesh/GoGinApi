@@ -11,7 +11,6 @@ import (
 	"github.com/umesh/ginapi/models"
 )
 
-// GetUsers returns all users (protected route)
 func GetUsers(c *gin.Context) {
 	rows, err := config.DB.Query(`
         SELECT id, name, email, created_at, updated_at 
@@ -48,7 +47,6 @@ func GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// GetUsersByID returns a user by ID (protected route)
 func GetUsersByID(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -81,7 +79,6 @@ func GetUsersByID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// CreateUser creates a new user (public route)
 func CreateUser(c *gin.Context) {
 	var user models.User
 
@@ -114,7 +111,6 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Hash password before storing
 	hashedPassword := hashPassword(user.Password)
 
 	result, err := config.DB.Exec(`
@@ -133,7 +129,6 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	// Get the newly created user without password
 	newUser := models.User{}
 	err = config.DB.QueryRow(`
         SELECT id, name, email, created_at, updated_at 
@@ -154,7 +149,6 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, newUser)
 }
 
-// UpdateUser updates a user (protected route)
 func UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -162,14 +156,12 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from token to ensure users can only update their own profile
 	tokenUserID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	// Convert tokenUserID to string for comparison
 	tokenUserIDStr := string(fmt.Sprintf("%v", tokenUserID))
 	if id != tokenUserIDStr {
 		c.JSON(http.StatusForbidden, gin.H{"error": "you can only update your own profile"})
@@ -182,7 +174,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Get current user data
 	var currentUser models.User
 	err := config.DB.QueryRow(`
         SELECT email FROM users WHERE id = ?`, id,
@@ -196,7 +187,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Check for duplicate email if email is being changed
 	if user.Email != currentUser.Email {
 		var count int
 		err := config.DB.QueryRow(`
@@ -214,12 +204,10 @@ func UpdateUser(c *gin.Context) {
 		}
 	}
 
-	// Hash new password if provided
 	var hashedPassword string
 	if user.Password != "" {
 		hashedPassword = hashPassword(user.Password)
 	} else {
-		// Get current password if not being updated
 		err := config.DB.QueryRow(`
             SELECT password FROM users WHERE id = ?`, id,
 		).Scan(&hashedPassword)
@@ -229,7 +217,6 @@ func UpdateUser(c *gin.Context) {
 		}
 	}
 
-	// Update user
 	_, err = config.DB.Exec(`
         UPDATE users 
         SET name = ?, email = ?, password = ? 
@@ -241,7 +228,6 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Return updated user data
 	updatedUser := models.User{}
 	err = config.DB.QueryRow(`
         SELECT id, name, email, created_at, updated_at 

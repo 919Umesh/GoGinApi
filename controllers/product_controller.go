@@ -61,7 +61,6 @@ func GetProductByID(c *gin.Context) {
 		return
 	}
 
-	// Get product data
 	productData := models.Product{}
 	err = config.DB.QueryRow(`
 		SELECT id, name, price, quantity, image, sales_rate, purchase_rate 
@@ -92,7 +91,6 @@ func CreateProduct(c *gin.Context) {
 		return
 	}
 
-	// Check if product with same name already exists
 	var count int
 	err := config.DB.QueryRow("SELECT COUNT(*) FROM products WHERE name = ?", product.Name).Scan(&count)
 	if err != nil {
@@ -142,7 +140,6 @@ func UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	// Check if product exists
 	var count int
 	err := config.DB.QueryRow("SELECT COUNT(*) FROM products WHERE id = ?", id).Scan(&count)
 	if err != nil {
@@ -154,7 +151,6 @@ func UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	// Update product
 	_, err = config.DB.Exec(`
 		UPDATE products 
 		SET name = ?, price = ?, quantity = ?, image = ?, sales_rate = ?, purchase_rate = ?
@@ -182,7 +178,6 @@ func DeleteProduct(c *gin.Context) {
 		return
 	}
 
-	// Check if product exists
 	var count int
 	err := config.DB.QueryRow("SELECT COUNT(*) FROM products WHERE id = ?", id).Scan(&count)
 	if err != nil {
@@ -194,7 +189,6 @@ func DeleteProduct(c *gin.Context) {
 		return
 	}
 
-	// Delete product
 	_, err = config.DB.Exec("DELETE FROM products WHERE id = ?", id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
