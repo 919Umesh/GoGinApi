@@ -8,20 +8,27 @@ import (
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
-	// Add this line to serve static files
 	r.Static("/uploads", "./uploads")
 
-	api := r.Group("/api")
+	// Public routes
+	public := r.Group("/api")
 	{
-		users := api.Group("/users")
+		public.POST("/login", controllers.Login)
+		public.POST("/users", controllers.CreateUser)
+	}
+
+	// Protected routes (require JWT)
+	protected := r.Group("/api")
+	protected.Use(controllers.AuthMiddleware())
+	{
+		users := protected.Group("/users")
 		{
 			users.GET("/", controllers.GetUsers)
 			users.GET("/:id", controllers.GetUsersByID)
-			users.POST("/", controllers.CreateUser)
 			users.PATCH("/:id", controllers.UpdateUser)
-			users.DELETE("/:id", controllers.DeleteUser)
 		}
-		products := api.Group("/products")
+
+		products := protected.Group("/products")
 		{
 			products.GET("/", controllers.GetProducts)
 			products.GET("/:id", controllers.GetProductByID)
@@ -29,7 +36,8 @@ func SetupRouter() *gin.Engine {
 			products.PATCH("/:id", controllers.UpdateProduct)
 			products.DELETE("/:id", controllers.DeleteProduct)
 		}
-		venues := api.Group("/venues")
+
+		venues := protected.Group("/venues")
 		{
 			venues.GET("/", controllers.GetVenues)
 			venues.POST("/", controllers.CreateVenue)
