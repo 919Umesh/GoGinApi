@@ -10,40 +10,6 @@ import (
 	"github.com/umesh/ginapi/models"
 )
 
-// func GetProducts(c *gin.Context) {
-// 	rows, err := config.DB.Query("SELECT id, name, price, quantity, image, sales_rate, purchase_rate FROM products")
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	defer rows.Close()
-
-// 	var products []models.Product
-// 	for rows.Next() {
-// 		var product models.Product
-// 		err := rows.Scan(
-// 			&product.ID,
-// 			&product.Name,
-// 			&product.Price,
-// 			&product.Quantity,
-// 			&product.Image,
-// 			&product.SalesRate,
-// 			&product.PurchaseRate,
-// 		)
-// 		if err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 			return
-// 		}
-// 		products = append(products, product)
-// 	}
-
-// 	if err = rows.Err(); err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-//		c.JSON(http.StatusOK, products)
-//	}
 func GetProducts(c *gin.Context) {
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page < 1 {
