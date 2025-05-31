@@ -66,6 +66,23 @@ func createProductsTable(db *sql.DB) error {
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 	)`
 
-	_, err := db.Exec(createTableSQL)
-	return err
+	// _, err := db.Exec(createTableSQL)
+	// return err
+	if _, err := db.Exec(createTableSQL); err != nil {
+		return err
+	}
+
+	// // Add new columns if they don't exist
+	// alterSQLs := []string{
+	// 	`ALTER TABLE products ADD COLUMN IF NOT EXISTS new_column VARCHAR(255)`,
+	// 	`ALTER TABLE products MODIFY COLUMN price DECIMAL(12,2)`,
+	// 	// Add more ALTER statements as needed
+	// }
+
+	// for _, sql := range alterSQLs {
+	// 	if _, err := db.Exec(sql); err != nil {
+	// 		return err
+	// 	}
+	// }
+	return nil
 }
