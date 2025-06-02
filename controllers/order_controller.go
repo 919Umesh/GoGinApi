@@ -72,6 +72,7 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 
+		//If the request quantity is grater than available then order cannot be placed
 		if product.Quantity < item.Quantity {
 			tx.Rollback()
 			c.JSON(http.StatusBadRequest, gin.H{
