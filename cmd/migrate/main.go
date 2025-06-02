@@ -103,3 +103,20 @@ func createOrderTable(db *sql.DB) error {
 	_, err := db.Exec(createTableSQL)
 	return err
 }
+
+func createOrderItemsTable(db *sql.DB) error {
+	createTableSQL := `
+	CREATE TABLE IF NOT EXISTS order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+)`
+
+	_, err := db.Exec(createTableSQL)
+	return err
+}
