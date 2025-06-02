@@ -17,12 +17,14 @@ import (
 
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
+// Funtion to store the user password in the hashed form using sha256
 func hashPassword(password string) string {
 	hasher := sha256.New()
 	hasher.Write([]byte(password))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
+// Generate the jwt token for the user after the login success
 func GenerateJWT(user models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID,
