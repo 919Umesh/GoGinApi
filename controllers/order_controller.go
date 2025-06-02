@@ -17,12 +17,14 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
+	//Here the user id isnot given from the header it is get through the auth token
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
 	}
 
+	//convert the user id in the int type from the hash to the normal key using the secret key
 	var userIDUint uint
 	switch v := userID.(type) {
 	case float64:
@@ -53,6 +55,9 @@ func CreateOrder(c *gin.Context) {
 	var totalAmount float64
 	var orderItems []models.OrderItem
 
+	fmt.Println("-----------------Loop-Begin-Product---------------")
+	//bsjfdtgf
+	fmt.Println("Loop go through the all elements on the list")
 	for _, item := range req.Items {
 		var product models.Product
 		err := tx.QueryRow(`
@@ -86,7 +91,8 @@ func CreateOrder(c *gin.Context) {
 			TotalPrice: itemTotal,
 		})
 	}
-
+	fmt.Println("-----------------Loop-End-Product---------------")
+	//fgdfgdfgdfgfdg
 	result, err := tx.Exec(`
 		INSERT INTO orders (user_id, total_amount) 
 		VALUES (?, ?)`,
