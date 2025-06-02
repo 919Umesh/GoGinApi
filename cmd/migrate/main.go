@@ -24,6 +24,8 @@ func main() {
 		{"users", createUsersTable},
 		{"products", createProductsTable},
 		{"venues", createVenuesTable},
+		{"orders", createOrderTable},
+		{"orderItmes", createOrderItemsTable},
 	}
 
 	for _, table := range tables {
