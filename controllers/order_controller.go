@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -16,26 +17,43 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from context (set by AuthMiddleware)
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
 	}
 
-	// Begin transaction
+	var userIDUint uint
+	switch v := userID.(type) {
+	case float64:
+		userIDUint = uint(v)
+	case int:
+		userIDUint = uint(v)
+	case int64:
+		userIDUint = uint(v)
+	case uint:
+		userIDUint = v
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user ID type"})
+		return
+	}
+
+	fmt.Println("-----------Begin Transaction---------------")
 	tx, err := config.DB.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
-	// Calculate total amount and prepare order items
 	var totalAmount float64
 	var orderItems []models.OrderItem
 
 	for _, item := range req.Items {
-		// Get product details
 		var product models.Product
 		err := tx.QueryRow(`
 			SELECT id, name, price, quantity 
@@ -49,18 +67,18 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 
-		// Check stock availability
 		if product.Quantity < item.Quantity {
 			tx.Rollback()
-			c.JSON(http.StatusBadRequest, gin.H{"error": "insufficient stock for product " + product.Name})
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": fmt.Sprintf("insufficient stock for product %s (available: %d, requested: %d)",
+					product.Name, product.Quantity, item.Quantity),
+			})
 			return
 		}
 
-		// Calculate item total
 		itemTotal := product.Price * float64(item.Quantity)
 		totalAmount += itemTotal
 
-		// Prepare order item
 		orderItems = append(orderItems, models.OrderItem{
 			ProductID:  product.ID,
 			Quantity:   item.Quantity,
@@ -69,11 +87,10 @@ func CreateOrder(c *gin.Context) {
 		})
 	}
 
-	// Create order
 	result, err := tx.Exec(`
 		INSERT INTO orders (user_id, total_amount) 
 		VALUES (?, ?)`,
-		userID, totalAmount,
+		userIDUint, totalAmount,
 	)
 	if err != nil {
 		tx.Rollback()
@@ -88,9 +105,7 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
-	// Create order items and update product quantities
 	for _, item := range orderItems {
-		// Insert order item
 		_, err := tx.Exec(`
 			INSERT INTO order_items (order_id, product_id, quantity, unit_price, total_price) 
 			VALUES (?, ?, ?, ?, ?)`,
@@ -102,7 +117,6 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 
-		// Update product quantity
 		_, err = tx.Exec(`
 			UPDATE products 
 			SET quantity = quantity - ? 
@@ -116,16 +130,14 @@ func CreateOrder(c *gin.Context) {
 		}
 	}
 
-	// Commit transaction
 	if err := tx.Commit(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Return created order
 	order := models.Order{
 		ID:          uint(orderID),
-		UserID:      userID.(uint),
+		UserID:      userIDUint,
 		TotalAmount: totalAmount,
 		Status:      "pending",
 		OrderItems:  orderItems,
@@ -135,20 +147,33 @@ func CreateOrder(c *gin.Context) {
 }
 
 func GetUserOrders(c *gin.Context) {
-	// Get user ID from context
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
 	}
 
-	// Query orders
+	var userIDUint uint
+	switch v := userID.(type) {
+	case float64:
+		userIDUint = uint(v)
+	case int:
+		userIDUint = uint(v)
+	case int64:
+		userIDUint = uint(v)
+	case uint:
+		userIDUint = v
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user ID type"})
+		return
+	}
+
 	rows, err := config.DB.Query(`
 		SELECT id, user_id, total_amount, status, created_at 
 		FROM orders 
 		WHERE user_id = ? 
 		ORDER BY created_at DESC`,
-		userID,
+		userIDUint,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -172,7 +197,6 @@ func GetUserOrders(c *gin.Context) {
 		orders = append(orders, order)
 	}
 
-	// Get order items for each order
 	for i, order := range orders {
 		itemRows, err := config.DB.Query(`
 			SELECT oi.id, oi.product_id, oi.quantity, oi.unit_price, oi.total_price, 
@@ -191,20 +215,22 @@ func GetUserOrders(c *gin.Context) {
 		var orderItems []models.OrderItem
 		for itemRows.Next() {
 			var item models.OrderItem
+			var product models.Product
 			if err := itemRows.Scan(
 				&item.ID,
 				&item.ProductID,
 				&item.Quantity,
 				&item.UnitPrice,
 				&item.TotalPrice,
-				&item.Product.Name,
-				&item.Product.Image,
-				&item.Product.SalesRate,
-				&item.Product.PurchaseRate,
+				&product.Name,
+				&product.Image,
+				&product.SalesRate,
+				&product.PurchaseRate,
 			); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
+			item.Product = product
 			orderItems = append(orderItems, item)
 		}
 		orders[i].OrderItems = orderItems
@@ -220,20 +246,33 @@ func GetOrderByID(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from context
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
 	}
 
-	// Query order
+	var userIDUint uint
+	switch v := userID.(type) {
+	case float64:
+		userIDUint = uint(v)
+	case int:
+		userIDUint = uint(v)
+	case int64:
+		userIDUint = uint(v)
+	case uint:
+		userIDUint = v
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user ID type"})
+		return
+	}
+
 	var order models.Order
 	err = config.DB.QueryRow(`
 		SELECT id, user_id, total_amount, status, created_at 
 		FROM orders 
 		WHERE id = ? AND user_id = ?`,
-		orderID, userID,
+		orderID, userIDUint,
 	).Scan(
 		&order.ID,
 		&order.UserID,
@@ -246,7 +285,6 @@ func GetOrderByID(c *gin.Context) {
 		return
 	}
 
-	// Get order items
 	itemRows, err := config.DB.Query(`
 		SELECT oi.id, oi.product_id, oi.quantity, oi.unit_price, oi.total_price, 
 		       p.name, p.image, p.sales_rate, p.purchase_rate
@@ -264,20 +302,22 @@ func GetOrderByID(c *gin.Context) {
 	var orderItems []models.OrderItem
 	for itemRows.Next() {
 		var item models.OrderItem
+		var product models.Product
 		if err := itemRows.Scan(
 			&item.ID,
 			&item.ProductID,
 			&item.Quantity,
 			&item.UnitPrice,
 			&item.TotalPrice,
-			&item.Product.Name,
-			&item.Product.Image,
-			&item.Product.SalesRate,
-			&item.Product.PurchaseRate,
+			&product.Name,
+			&product.Image,
+			&product.SalesRate,
+			&product.PurchaseRate,
 		); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		item.Product = product
 		orderItems = append(orderItems, item)
 	}
 	order.OrderItems = orderItems
