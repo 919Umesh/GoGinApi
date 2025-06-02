@@ -41,6 +41,13 @@ func SetupRouter() *gin.Engine {
 			venues.GET("/", controllers.GetVenues)
 			venues.POST("/", controllers.CreateVenue)
 		}
+		// Add this to your protected routes
+		orders := protected.Group("/orders")
+		{
+			orders.POST("/", controllers.CreateOrder)
+			orders.GET("/", controllers.GetUserOrders)
+			orders.GET("/:id", controllers.GetOrderByID)
+		}
 	}
 
 	return r
