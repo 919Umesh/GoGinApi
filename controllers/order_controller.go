@@ -111,6 +111,7 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
+	//Insert the item in the order table with the loop
 	for _, item := range orderItems {
 		_, err := tx.Exec(`
 			INSERT INTO order_items (order_id, product_id, quantity, unit_price, total_price) 
