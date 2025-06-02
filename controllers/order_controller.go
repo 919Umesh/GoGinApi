@@ -200,7 +200,7 @@ func GetUserOrders(c *gin.Context) {
 	for i, order := range orders {
 		itemRows, err := config.DB.Query(`
 			SELECT oi.id, oi.product_id, oi.quantity, oi.unit_price, oi.total_price, 
-			       p.name, p.image, p.sales_rate, p.purchase_rate
+			      p.id, p.name, p.price, p.quantity, p.image,p.sales_rate
 			FROM order_items oi
 			JOIN products p ON oi.product_id = p.id
 			WHERE oi.order_id = ?`,
@@ -222,10 +222,12 @@ func GetUserOrders(c *gin.Context) {
 				&item.Quantity,
 				&item.UnitPrice,
 				&item.TotalPrice,
+				&product.ID,
 				&product.Name,
+				&product.Price,
+				&product.Quantity,
 				&product.Image,
 				&product.SalesRate,
-				&product.PurchaseRate,
 			); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
