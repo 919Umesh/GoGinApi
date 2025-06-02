@@ -73,6 +73,7 @@ func Login(c *gin.Context) {
 	})
 }
 
+// Middleware to validate the every protected api
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
