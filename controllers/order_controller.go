@@ -207,7 +207,7 @@ func GetUserOrders(c *gin.Context) {
 
 	for i, order := range orders {
 		itemRows, err := config.DB.Query(`
-			SELECT oi.id, oi.product_id, oi.quantity, oi.unit_price, oi.total_price, 
+			SELECT oi.id, oi.order_id,oi.product_id, oi.quantity, oi.unit_price, oi.total_price, 
 			      p.id, p.name, p.price, p.quantity, p.image,p.sales_rate,p.purchase_rate
 			FROM order_items oi
 			JOIN products p ON oi.product_id = p.id
@@ -226,6 +226,7 @@ func GetUserOrders(c *gin.Context) {
 			var product models.Product
 			if err := itemRows.Scan(
 				&item.ID,
+				&item.OrderID,
 				&item.ProductID,
 				&item.Quantity,
 				&item.UnitPrice,
