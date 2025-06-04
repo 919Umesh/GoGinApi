@@ -10,12 +10,14 @@ func SetupRouter() *gin.Engine {
 
 	r.Static("/uploads", "./uploads")
 
+	//Public route to generate and authenticate the token
 	public := r.Group("/api")
 	{
 		public.POST("/login", controllers.Login)
 		public.POST("/users", controllers.CreateUser)
 	}
 
+	//Protected Route only accessible with the jwt token
 	protected := r.Group("/api")
 	protected.Use(controllers.AuthMiddleware())
 	{
